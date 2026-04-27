@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Klaviyo\Reclaim\Block\Initialize;
+
+/** @var Initialize $block */
+/** @var ViewModelRegistry $viewModels */
+
+if (!$block->isKlaviyoEnabled() || !$block->getPublicApiKey()) {
+    return;
+}
+
+/** @var HyvaCsp $hyvaCsp */
+$hyvaCsp = $viewModels->require(HyvaCsp::class);
+?>
+
+<div x-data="klaviyoCartTracking"></div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('klaviyoCartTracking', () => ({
+            init() {
+                if (!window.klaviyoConsentGranted || !window.klaviyoConsentGranted()) {
+                    window.addEventListener('cookie-consent-updated', () => {
+                        if (window.klaviyoConsentGranted && window.klaviyoConsentGranted()) {
+                            this.reload();
+                        }
+                    }, { once: true });
+                    return;
+                }
+                this.reload();
+            },
+
+            reload() {
+                fetch('/reclaim/checkout/reload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        form_key: hyva.getFormKey()
+                    })
+                });
+            }
+        }));
+    });
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>

@@ -1,0 +1,26 @@
+{
+  "name": "pixelperfectat/magento2-klaviyo-hyva-compat",
+  "description": "Hyva Theme compatibility for Klaviyo_Reclaim. Based on hyva-themes/magento2-klaviyo-reclaim.",
+  "type": "magento2-module",
+  "require": {
+    "php": "^8.1",
+    "magento/framework": "*",
+    "hyva-themes/magento2-compat-module-fallback": "*",
+    "klaviyo/magento2-extension": "*"
+  },
+  "authors": [
+    {
+      "name": "PixelPerfect",
+      "homepage": "https://github.com/pixelperfectat"
+    }
+  ],
+  "license": "MIT",
+  "autoload": {
+    "files": [
+      "src/registration.php"
+    ],
+    "psr-4": {
+      "PixelPerfect\\KlaviyoHyvaCompat\\": "src/"
+    }
+  }
+}
