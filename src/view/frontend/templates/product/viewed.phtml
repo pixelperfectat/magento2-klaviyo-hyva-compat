@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Klaviyo\Reclaim\Block\Catalog\Product\ViewedProduct;
+
+/** @var ViewedProduct $block */
+/** @var ViewModelRegistry $viewModels */
+
+if (!$block->isKlaviyoEnabled()) {
+    return;
+}
+
+/** @var HyvaCsp $hyvaCsp */
+$hyvaCsp = $viewModels->require(HyvaCsp::class);
+
+$viewedProductJson = $block->getViewedProductJson();
+$viewedItemJson = $block->getViewedItemJson();
+?>
+
+<div x-data="klaviyoProductViewed"></div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('klaviyoProductViewed', () => ({
+            init() {
+                if (!window.klaviyoConsentGranted || !window.klaviyoConsentGranted()) {
+                    window.addEventListener('cookie-consent-updated', () => {
+                        if (window.klaviyoConsentGranted && window.klaviyoConsentGranted()) {
+                            this.track();
+                        }
+                    }, { once: true });
+                    return;
+                }
+                this.track();
+            },
+
+            track() {
+                window.klaviyo = window.klaviyo || [];
+                window.klaviyo.push(['track', 'Viewed Product', <?= /* @noEscape */ $viewedProductJson ?>]);
+                window.klaviyo.push(['trackViewedItem', <?= /* @noEscape */ $viewedItemJson ?>]);
+            }
+        }));
+    });
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>

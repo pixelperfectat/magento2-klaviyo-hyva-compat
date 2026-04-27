@@ -1,0 +1,94 @@
+<?php
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Klaviyo\Reclaim\Block\Initialize;
+
+/** @var Initialize $block */
+/** @var ViewModelRegistry $viewModels */
+
+$klaviyoKey = $block->getPublicApiKey();
+
+if (!$block->isKlaviyoEnabled() || !$klaviyoKey) {
+    return;
+}
+
+/** @var HyvaCsp $hyvaCsp */
+$hyvaCsp = $viewModels->require(HyvaCsp::class);
+$klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr($klaviyoKey) . '/klaviyo.js';
+?>
+
+<div x-data="klaviyoCustomerTracking"
+     @private-content-loaded.window="onPrivateContentLoaded">
+</div>
+
+<script>
+    // Default consent check — uses Magento cookie restriction mode.
+    // The bridge module (PixelPerfect_KlaviyoHyvaCookieConsent) overrides this
+    // to use cookie_consent_groups.marketing instead.
+    window.klaviyoConsentGranted = window.klaviyoConsentGranted || function() {
+        var cookie = hyva.getCookie('user_allowed_save_cookie');
+        return cookie === null || cookie !== '';
+    };
+
+    // Load Klaviyo CDN script only if consent is granted
+    function klaviyoLoadCdn() {
+        if (document.querySelector('script[src*="klaviyo.js"]')) {
+            return;
+        }
+        var s = document.createElement('script');
+        s.type = 'application/javascript';
+        s.async = true;
+        s.src = '<?= /* @noEscape */ $klaviyoSrc ?>';
+        document.head.appendChild(s);
+    }
+
+    if (window.klaviyoConsentGranted()) {
+        klaviyoLoadCdn();
+    }
+
+    window.addEventListener('cookie-consent-updated', function() {
+        if (window.klaviyoConsentGranted()) {
+            klaviyoLoadCdn();
+        }
+    });
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('klaviyoCustomerTracking', () => ({
+            onPrivateContentLoaded(event) {
+                const customer = event.detail.data.customer;
+
+                if (!customer || !customer.email) {
+                    return;
+                }
+
+                if (!window.klaviyoConsentGranted()) {
+                    window.addEventListener('cookie-consent-updated', () => {
+                        if (window.klaviyoConsentGranted()) {
+                            this.identifyCustomer(customer);
+                        }
+                    }, { once: true });
+                    return;
+                }
+
+                this.identifyCustomer(customer);
+            },
+
+            identifyCustomer(customer) {
+                window.klaviyo = window.klaviyo || [];
+                window.klaviyo.isIdentified().then((identified) => {
+                    if (!identified) {
+                        window.klaviyo.identify({
+                            '$email': customer.email,
+                            '$first_name': customer.firstname || '',
+                            '$last_name': customer.lastname || ''
+                        });
+                    }
+                });
+            }
+        }));
+    });
+</script>
+<?php $hyvaCsp->registerInlineScript() ?>
