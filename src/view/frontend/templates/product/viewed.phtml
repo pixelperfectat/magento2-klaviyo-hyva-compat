@@ -23,8 +23,8 @@ $viewedItemJson = $block->getViewedItemJson();
 <div x-data="klaviyoProductViewed"></div>
 
 <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('klaviyoProductViewed', () => ({
+    function initKlaviyoProductViewed() {
+        return {
             init() {
                 if (!window.klaviyoConsentGranted || !window.klaviyoConsentGranted()) {
                     window.addEventListener('cookie-consent-updated', () => {
@@ -45,7 +45,18 @@ $viewedItemJson = $block->getViewedItemJson();
                 window._learnq.push(['track', 'Viewed Product', <?= /* @noEscape */ $viewedProductJson ?>]);
                 window._learnq.push(['trackViewedItem', <?= /* @noEscape */ $viewedItemJson ?>]);
             }
-        }));
-    });
+        };
+    }
+
+    // Register immediately if Alpine is already up; otherwise queue on
+    // alpine:init. Prevents the race where Alpine processes the directive
+    // before the factory is in the registry.
+    if (window.Alpine && typeof window.Alpine.data === 'function') {
+        window.Alpine.data('klaviyoProductViewed', initKlaviyoProductViewed);
+    } else {
+        document.addEventListener('alpine:init', () => {
+            window.Alpine.data('klaviyoProductViewed', initKlaviyoProductViewed);
+        }, { once: true });
+    }
 </script>
 <?php $hyvaCsp->registerInlineScript() ?>

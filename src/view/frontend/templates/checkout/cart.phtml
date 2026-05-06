@@ -20,8 +20,8 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
 <div x-data="klaviyoCartTracking"></div>
 
 <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('klaviyoCartTracking', () => ({
+    function initKlaviyoCartTracking() {
+        return {
             init() {
                 if (!window.klaviyoConsentGranted || !window.klaviyoConsentGranted()) {
                     window.addEventListener('cookie-consent-updated', () => {
@@ -46,7 +46,21 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
                     })
                 });
             }
-        }));
-    });
+        };
+    }
+
+    // Register the component immediately if Alpine is already loaded; otherwise
+    // queue the registration on alpine:init. The previous pattern (always
+    // registering inside the alpine:init listener) raced with Alpine's DOM
+    // walker on pages where this template renders early in <body>: Alpine
+    // processed <div x-data="klaviyoCartTracking"> before the factory was in
+    // the registry, bound the factory after the fact, and never re-ran init().
+    if (window.Alpine && typeof window.Alpine.data === 'function') {
+        window.Alpine.data('klaviyoCartTracking', initKlaviyoCartTracking);
+    } else {
+        document.addEventListener('alpine:init', () => {
+            window.Alpine.data('klaviyoCartTracking', initKlaviyoCartTracking);
+        }, { once: true });
+    }
 </script>
 <?php $hyvaCsp->registerInlineScript() ?>
