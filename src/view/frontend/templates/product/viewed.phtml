@@ -38,9 +38,12 @@ $viewedItemJson = $block->getViewedItemJson();
             },
 
             track() {
-                window.klaviyo = window.klaviyo || [];
-                window.klaviyo.push(['track', 'Viewed Product', <?= /* @noEscape */ $viewedProductJson ?>]);
-                window.klaviyo.push(['trackViewedItem', <?= /* @noEscape */ $viewedItemJson ?>]);
+                // Klaviyo's onsite v3 SDK exposes track on window._learnq, not
+                // window.klaviyo (the latter only carries identify/isIdentified
+                // and a stub push that doesn't dispatch track events).
+                window._learnq = window._learnq || [];
+                window._learnq.push(['track', 'Viewed Product', <?= /* @noEscape */ $viewedProductJson ?>]);
+                window._learnq.push(['trackViewedItem', <?= /* @noEscape */ $viewedItemJson ?>]);
             }
         }));
     });
