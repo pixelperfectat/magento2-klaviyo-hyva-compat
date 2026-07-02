@@ -60,6 +60,18 @@
         {
             "type": "composer",
             "url": "https://repo.magento.com/"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-compat-module-fallback.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-theme-module.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-mollie-theme-bundle.git"
         }
     ]
 }
