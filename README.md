@@ -6,10 +6,10 @@ Based on [hyva-themes/magento2-klaviyo-reclaim](https://gitlab.hyva.io/hyva-them
 
 ## Requirements
 
-- Magento 2.4+
-- Hyva Theme
-- hyva-themes/magento2-compat-module-fallback
-- klaviyo/magento2-extension ^4.0
+- PHP 8.3+
+- Magento 2.4.x
+- Hyvä Theme (`hyva-themes/magento2-compat-module-fallback` ^1.0)
+- `klaviyo/magento2-extension` ^4.0
 
 ## Features
 
@@ -17,3 +17,19 @@ Based on [hyva-themes/magento2-klaviyo-reclaim](https://gitlab.hyva.io/hyva-them
 - Product view tracking (Viewed Product + trackViewedItem events)
 - Cart reload tracking (replaces jQuery AJAX with fetch API)
 - CSP strict compatible (HyvaCsp ViewModel pattern)
+
+## Installation
+
+```bash
+composer require pixelperfectat/magento2-klaviyo-hyva-compat
+bin/magento module:enable PixelPerfect_KlaviyoHyvaCompat
+bin/magento setup:upgrade
+```
+
+## Configuration
+
+No configuration required — the module only registers Klaviyo blocks/templates under Hyvä via the compat-module-fallback mechanism.
+
+## License
+
+[MIT](LICENSE)
