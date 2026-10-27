@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Klaviyo could load before consent when Magento cookie restriction mode is on. Without a consent manager, Klaviyo now waits for the visitor to accept cookies; with restriction mode off nothing changes.
 - Customer identification threw a TypeError when it ran before klaviyo.js had loaded, for example right after consent was granted. Calls are now queued through Klaviyo's documented stub, and identification no longer gets lost when the first consent update does not grant consent.
+- The cart refresh ping used a hard-coded root path and returned 404 on stores with store codes in the URL or a subfolder install. The URL is now built by Magento.
 
 ## [0.2.0] - 2026-07-06
 
