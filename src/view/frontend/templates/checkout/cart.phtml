@@ -5,8 +5,11 @@ declare(strict_types=1);
 use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\HyvaCsp;
 use Klaviyo\Reclaim\Block\Initialize;
+use Magento\Framework\Escaper;
+use PixelPerfect\KlaviyoHyvaCompat\ViewModel\KlaviyoTracking;
 
 /** @var Initialize $block */
+/** @var Escaper $escaper */
 /** @var ViewModelRegistry $viewModels */
 
 if (!$block->isKlaviyoEnabled() || !$block->getPublicApiKey()) {
@@ -15,6 +18,8 @@ if (!$block->isKlaviyoEnabled() || !$block->getPublicApiKey()) {
 
 /** @var HyvaCsp $hyvaCsp */
 $hyvaCsp = $viewModels->require(HyvaCsp::class);
+/** @var KlaviyoTracking $klaviyoTracking */
+$klaviyoTracking = $viewModels->require(KlaviyoTracking::class);
 ?>
 
 <div x-data="klaviyoCartTracking"></div>
@@ -35,7 +40,7 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
             },
 
             reload() {
-                fetch('/reclaim/checkout/reload', {
+                fetch('<?= $escaper->escapeJs($klaviyoTracking->getReloadUrl()) ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -49,12 +54,7 @@ $hyvaCsp = $viewModels->require(HyvaCsp::class);
         };
     }
 
-    // Register the component immediately if Alpine is already loaded; otherwise
-    // queue the registration on alpine:init. The previous pattern (always
-    // registering inside the alpine:init listener) raced with Alpine's DOM
-    // walker on pages where this template renders early in <body>: Alpine
-    // processed <div x-data="klaviyoCartTracking"> before the factory was in
-    // the registry, bound the factory after the fact, and never re-ran init().
+    // Register immediately if Alpine is already up; otherwise queue on alpine:init.
     if (window.Alpine && typeof window.Alpine.data === 'function') {
         window.Alpine.data('klaviyoCartTracking', initKlaviyoCartTracking);
     } else {

@@ -5,8 +5,11 @@ declare(strict_types=1);
 use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\HyvaCsp;
 use Klaviyo\Reclaim\Block\Initialize;
+use Magento\Framework\Escaper;
+use PixelPerfect\KlaviyoHyvaCompat\ViewModel\KlaviyoTracking;
 
 /** @var Initialize $block */
+/** @var Escaper $escaper */
 /** @var ViewModelRegistry $viewModels */
 
 $klaviyoKey = $block->getPublicApiKey();
@@ -17,7 +20,9 @@ if (!$block->isKlaviyoEnabled() || !$klaviyoKey) {
 
 /** @var HyvaCsp $hyvaCsp */
 $hyvaCsp = $viewModels->require(HyvaCsp::class);
-$klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr($klaviyoKey) . '/klaviyo.js';
+/** @var KlaviyoTracking $klaviyoTracking */
+$klaviyoTracking = $viewModels->require(KlaviyoTracking::class);
+$klaviyoSrc = $klaviyoTracking->getSdkUrl($klaviyoKey);
 ?>
 
 <div x-data="klaviyoCustomerTracking"
@@ -25,12 +30,21 @@ $klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr
 </div>
 
 <script>
-    // Default consent check — uses Magento cookie restriction mode.
-    // The bridge module (PixelPerfect_KlaviyoHyvaCookieConsent) overrides this
-    // to use cookie_consent_groups.marketing instead.
+    // Default consent check, based on Magento's cookie restriction mode. A consent manager takes
+    // over by defining window.klaviyoConsentGranted before this script runs (see README).
     window.klaviyoConsentGranted = window.klaviyoConsentGranted || function() {
+        if (!<?= $klaviyoTracking->isCookieRestrictionEnabled() ? 'true' : 'false' ?>) {
+            return true;
+        }
         var cookie = hyva.getCookie('user_allowed_save_cookie');
-        return cookie === null || cookie !== '';
+        if (!cookie) {
+            return false;
+        }
+        try {
+            return JSON.parse(decodeURIComponent(cookie))[window.CURRENT_WEBSITE_ID] === 1;
+        } catch (e) {
+            return false;
+        }
     };
 
     // Load Klaviyo CDN script only if consent is granted
@@ -41,7 +55,7 @@ $klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr
         var s = document.createElement('script');
         s.type = 'application/javascript';
         s.async = true;
-        s.src = '<?= /* @noEscape */ $klaviyoSrc ?>';
+        s.src = '<?= $escaper->escapeJs($klaviyoSrc) ?>';
         document.head.appendChild(s);
     }
 
@@ -49,46 +63,111 @@ $klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr
         klaviyoLoadCdn();
     }
 
-    window.addEventListener('cookie-consent-updated', function() {
-        if (window.klaviyoConsentGranted()) {
-            klaviyoLoadCdn();
-        }
+    ['cookie-consent-updated', 'user-allowed-save-cookie'].forEach(function(eventName) {
+        window.addEventListener(eventName, function() {
+            if (window.klaviyoConsentGranted()) {
+                klaviyoLoadCdn();
+            }
+        });
     });
 
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('klaviyoCustomerTracking', () => ({
+    // Klaviyo's documented queue stub: method calls such as isIdentified() and identify() are
+    // queued in window._klOnsite and replayed once the async klaviyo.js has loaded.
+    function klaviyoQueue() {
+        if (!window.klaviyo) {
+            window._klOnsite = window._klOnsite || [];
+            try {
+                window.klaviyo = new Proxy({}, {
+                    get: function(target, method) {
+                        if (method === 'push') {
+                            return function() {
+                                window._klOnsite.push.apply(window._klOnsite, arguments);
+                            };
+                        }
+                        return function() {
+                            var args = Array.prototype.slice.call(arguments);
+                            var callback = typeof args[args.length - 1] === 'function' ? args.pop() : undefined;
+                            return new Promise(function(resolve) {
+                                window._klOnsite.push([method].concat(args, [function(result) {
+                                    if (callback) {
+                                        callback(result);
+                                    }
+                                    resolve(result);
+                                }]));
+                            });
+                        };
+                    }
+                });
+            } catch (e) {
+                window.klaviyo = window.klaviyo || [];
+                window.klaviyo.push = function() {
+                    window._klOnsite.push.apply(window._klOnsite, arguments);
+                };
+            }
+        }
+        return window.klaviyo;
+    }
+
+    function initKlaviyoCustomerTracking() {
+        return {
+            identifyDispatched: false,
+
             onPrivateContentLoaded(event) {
-                const customer = event.detail.data.customer;
+                const customer = event.detail && event.detail.data && event.detail.data.customer;
 
                 if (!customer || !customer.email) {
                     return;
                 }
 
-                if (!window.klaviyoConsentGranted()) {
-                    window.addEventListener('cookie-consent-updated', () => {
-                        if (window.klaviyoConsentGranted()) {
-                            this.identifyCustomer(customer);
-                        }
-                    }, { once: true });
+                if (window.klaviyoConsentGranted()) {
+                    this.identifyCustomer(customer);
                     return;
                 }
 
-                this.identifyCustomer(customer);
+                const consentEvents = ['cookie-consent-updated', 'user-allowed-save-cookie'];
+                const identifyOnConsent = () => {
+                    if (!window.klaviyoConsentGranted()) {
+                        return;
+                    }
+                    consentEvents.forEach((name) => window.removeEventListener(name, identifyOnConsent));
+                    this.identifyCustomer(customer);
+                };
+                consentEvents.forEach((name) => window.addEventListener(name, identifyOnConsent));
             },
 
             identifyCustomer(customer) {
-                window.klaviyo = window.klaviyo || [];
-                window.klaviyo.isIdentified().then((identified) => {
+                if (this.identifyDispatched) {
+                    return;
+                }
+                this.identifyDispatched = true;
+
+                const profile = {
+                    '$email': customer.email,
+                    '$first_name': customer.firstname || '',
+                    '$last_name': customer.lastname || ''
+                };
+                const klaviyo = klaviyoQueue();
+
+                if (typeof klaviyo.isIdentified !== 'function') {
+                    klaviyo.push(['identify', profile]);
+                    return;
+                }
+
+                klaviyo.isIdentified().then((identified) => {
                     if (!identified) {
-                        window.klaviyo.identify({
-                            '$email': customer.email,
-                            '$first_name': customer.firstname || '',
-                            '$last_name': customer.lastname || ''
-                        });
+                        klaviyo.identify(profile);
                     }
                 });
             }
-        }));
-    });
+        };
+    }
+
+    if (window.Alpine && typeof window.Alpine.data === 'function') {
+        window.Alpine.data('klaviyoCustomerTracking', initKlaviyoCustomerTracking);
+    } else {
+        document.addEventListener('alpine:init', () => {
+            window.Alpine.data('klaviyoCustomerTracking', initKlaviyoCustomerTracking);
+        }, { once: true });
+    }
 </script>
 <?php $hyvaCsp->registerInlineScript() ?>

@@ -1,59 +1,39 @@
 {
     "name": "pixelperfectat/magento2-klaviyo-hyva-compat",
-    "description": "Hyva Theme compatibility for Klaviyo_Reclaim. Based on hyva-themes/magento2-klaviyo-reclaim.",
-    "type": "magento2-module",
+    "description": "Hyvä Theme compatibility for Klaviyo_Reclaim: CSP-safe Alpine.js templates for customer identification, product view tracking and the cart refresh ping.",
     "license": "MIT",
-    "prefer-stable": true,
+    "type": "magento2-module",
+    "keywords": [
+        "magento2",
+        "magento2-module",
+        "hyva",
+        "hyva-themes",
+        "klaviyo",
+        "alpinejs",
+        "csp"
+    ],
     "authors": [
         {
             "name": "PixelPerfect",
             "homepage": "https://github.com/pixelperfectat"
         }
     ],
+    "support": {
+        "issues": "https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat/issues",
+        "source": "https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat"
+    },
     "require": {
-        "php": "^8.3",
+        "php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
         "hyva-themes/magento2-compat-module-fallback": "^1.0",
-        "klaviyo/magento2-extension": "^4.0",
-        "magento/framework": "^103.0"
+        "hyva-themes/magento2-theme-module": "^1.3.11",
+        "klaviyo/magento2-extension": "^4.4 || ^5.0",
+        "magento/framework": "^103.0",
+        "magento/module-store": "^101.0"
     },
     "require-dev": {
+        "infection/infection": "^0.35",
         "phpunit/phpunit": "^9.6",
-        "pixelperfectat/coding-standard": "^0.1.0"
-    },
-    "autoload": {
-        "files": [
-            "src/registration.php"
-        ],
-        "psr-4": {
-            "PixelPerfect\\KlaviyoHyvaCompat\\": "src/"
-        }
-    },
-    "scripts": {
-        "lint": "parallel-lint --exclude vendor .",
-        "cs": "phpcs",
-        "cs:fix": "phpcbf",
-        "stan": "phpstan analyse",
-        "test": "phpunit",
-        "ci:validate": "@composer validate --no-check-publish",
-        "check": [
-            "@ci:validate",
-            "@lint",
-            "@cs",
-            "@stan",
-            "@test"
-        ]
-    },
-    "config": {
-        "sort-packages": true,
-        "allow-plugins": {
-            "cweagans/composer-patches": true,
-            "dealerdirect/phpcodesniffer-composer-installer": true,
-            "ergebnis/composer-normalize": true,
-            "laminas/laminas-dependency-plugin": true,
-            "magento/*": true,
-            "php-http/discovery": true,
-            "phpstan/extension-installer": true
-        }
+        "pixelperfectat/coding-standard": "^0.2.0"
     },
     "repositories": [
         {
@@ -67,6 +47,54 @@
         {
             "type": "vcs",
             "url": "https://github.com/hyva-themes/magento2-theme-module.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/hyva-themes/magento2-mollie-theme-bundle.git"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "PixelPerfect\\KlaviyoHyvaCompat\\": "src/"
+        },
+        "files": [
+            "src/registration.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PixelPerfect\\KlaviyoHyvaCompat\\Test\\": "Test/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "cweagans/composer-patches": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "ergebnis/composer-normalize": true,
+            "infection/extension-installer": true,
+            "laminas/laminas-dependency-plugin": true,
+            "magento/*": true,
+            "php-http/discovery": true,
+            "phpstan/extension-installer": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "check": [
+            "@ci:validate",
+            "@lint",
+            "@cs",
+            "@stan",
+            "@test",
+            "@infection"
+        ],
+        "ci:normalize": "@composer normalize --dry-run --diff",
+        "ci:validate": "@composer validate --no-check-publish",
+        "cs": "phpcs",
+        "cs:fix": "phpcbf",
+        "infection": "infection --with-uncovered --min-msi=85 --min-covered-msi=90 --threads=max",
+        "lint": "parallel-lint --exclude vendor --exclude generated .",
+        "stan": "phpstan analyse",
+        "test": "phpunit"
+    }
 }

@@ -38,9 +38,7 @@ $viewedItemJson = $block->getViewedItemJson();
             },
 
             track() {
-                // Klaviyo's onsite v3 SDK exposes track on window._learnq, not
-                // window.klaviyo (the latter only carries identify/isIdentified
-                // and a stub push that doesn't dispatch track events).
+                // Track events go through window._learnq; window.klaviyo does not dispatch them.
                 window._learnq = window._learnq || [];
                 window._learnq.push(['track', 'Viewed Product', <?= /* @noEscape */ $viewedProductJson ?>]);
                 window._learnq.push(['trackViewedItem', <?= /* @noEscape */ $viewedItemJson ?>]);
@@ -48,9 +46,7 @@ $viewedItemJson = $block->getViewedItemJson();
         };
     }
 
-    // Register immediately if Alpine is already up; otherwise queue on
-    // alpine:init. Prevents the race where Alpine processes the directive
-    // before the factory is in the registry.
+    // Register immediately if Alpine is already up; otherwise queue on alpine:init.
     if (window.Alpine && typeof window.Alpine.data === 'function') {
         window.Alpine.data('klaviyoProductViewed', initKlaviyoProductViewed);
     } else {

@@ -1,0 +1,19 @@
+# Keep development files out of the dist archive that Composer installs.
+/.github            export-ignore
+/.gitattributes     export-ignore
+/.gitignore         export-ignore
+/Test               export-ignore
+/tests              export-ignore
+/phpcs.xml          export-ignore
+/phpstan.neon.dist  export-ignore
+/phpunit.xml.dist   export-ignore
+/infection.json.dist export-ignore
+/renovate.json      export-ignore
+/CLAUDE.md          export-ignore
+/.claude            export-ignore
+/AUDIT.md           export-ignore
+/STEP2-BRIEF.md     export-ignore
+/STEP2-REPORT.md    export-ignore
+/package.json       export-ignore
+/package-lock.json  export-ignore
+/playwright.config.ts export-ignore
