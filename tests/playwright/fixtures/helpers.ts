@@ -14,35 +14,37 @@ export async function addProductToCart(page: Page, productUrl: string): Promise<
     await page.waitForSelector('.message-success, [data-ui-id="message-success"]', { timeout: 10000 });
 }
 
-export async function goToCheckout(page: Page): Promise<void> {
-    await page.goto('/checkout');
-    await page.waitForSelector('[x-data]', { timeout: 10000 });
-}
-
-export async function assertNoLumaJs(page: Page): Promise<void> {
-    const lumaErrors = await page.evaluate(() => {
+/**
+ * Fails if Klaviyo's Luma (RequireJS/Knockout) integration is on the page.
+ * Only Klaviyo markers are checked, so unrelated third-party scripts don't break the test.
+ */
+export async function assertNoKlaviyoLumaJs(page: Page): Promise<void> {
+    const markers = await page.evaluate(() => {
         const scripts = Array.from(document.querySelectorAll('script'));
-        const hasRequireJs = scripts.some(s => s.src.includes('requirejs') || s.textContent?.includes('require('));
-        const hasMagentoInit = !!document.querySelector('script[type="text/x-magento-init"]');
-        const hasKlaviyoLumaInit = scripts.some(s =>
-            s.textContent?.includes('KlaviyoCustomerData') ||
-            s.textContent?.includes('Klaviyo_Reclaim/js/')
-        );
-        return { hasRequireJs, hasMagentoInit, hasKlaviyoLumaInit };
+        return {
+            klaviyoMagentoInit: scripts.some(s =>
+                s.type === 'text/x-magento-init' && (s.textContent ?? '').includes('KlaviyoCustomerData')
+            ),
+            klaviyoRequireJsModule: scripts.some(s =>
+                s.src.includes('Klaviyo_Reclaim/js/') || (s.textContent ?? '').includes('Klaviyo_Reclaim/js/')
+            ),
+        };
     });
 
-    expect(lumaErrors.hasRequireJs).toBe(false);
-    expect(lumaErrors.hasMagentoInit).toBe(false);
-    expect(lumaErrors.hasKlaviyoLumaInit).toBe(false);
+    expect(markers.klaviyoMagentoInit).toBe(false);
+    expect(markers.klaviyoRequireJsModule).toBe(false);
 }
 
-export async function assertNoCspViolations(page: Page): Promise<void> {
-    const cspErrors: string[] = [];
+/**
+ * Starts collecting Content-Security-Policy violations. Call it before page.goto() so that
+ * violations raised while the page loads are caught too.
+ */
+export function collectCspViolations(page: Page): string[] {
+    const violations: string[] = [];
     page.on('console', msg => {
         if (msg.type() === 'error' && msg.text().includes('Content Security Policy')) {
-            cspErrors.push(msg.text());
+            violations.push(msg.text());
         }
     });
-    await page.waitForTimeout(1000);
-    expect(cspErrors).toHaveLength(0);
+    return violations;
 }

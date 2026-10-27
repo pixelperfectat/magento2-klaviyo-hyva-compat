@@ -1,28 +1,31 @@
-import { test } from '@playwright/test';
-import { assertNoLumaJs, assertNoCspViolations, addProductToCart } from '../fixtures/helpers';
+import { test, expect } from '@playwright/test';
+import { assertNoKlaviyoLumaJs, collectCspViolations, addProductToCart } from '../fixtures/helpers';
 
-test.describe('No Luma JS Pollution + CSP Compliance', () => {
-    test('homepage has no Luma JS from Klaviyo', async ({ page }) => {
+const productUrl = process.env.TEST_PRODUCT_URL || '/fusion-backpack.html';
+
+test.describe('No Klaviyo Luma JS + CSP compliance', () => {
+    test('homepage', async ({ page }) => {
+        const cspViolations = collectCspViolations(page);
         await page.goto('/');
-        await page.waitForTimeout(2000);
-        await assertNoLumaJs(page);
-        await assertNoCspViolations(page);
+        await page.waitForLoadState('networkidle');
+        await assertNoKlaviyoLumaJs(page);
+        expect(cspViolations).toHaveLength(0);
     });
 
-    test('product page has no Luma JS from Klaviyo', async ({ page }) => {
-        const productUrl = process.env.TEST_PRODUCT_URL || '/fusion-backpack.html';
+    test('product page', async ({ page }) => {
+        const cspViolations = collectCspViolations(page);
         await page.goto(productUrl);
-        await page.waitForTimeout(2000);
-        await assertNoLumaJs(page);
-        await assertNoCspViolations(page);
+        await page.waitForLoadState('networkidle');
+        await assertNoKlaviyoLumaJs(page);
+        expect(cspViolations).toHaveLength(0);
     });
 
-    test('cart page has no Luma JS from Klaviyo', async ({ page }) => {
-        const productUrl = process.env.TEST_PRODUCT_URL || '/fusion-backpack.html';
+    test('cart page', async ({ page }) => {
         await addProductToCart(page, productUrl);
+        const cspViolations = collectCspViolations(page);
         await page.goto('/checkout/cart');
-        await page.waitForTimeout(2000);
-        await assertNoLumaJs(page);
-        await assertNoCspViolations(page);
+        await page.waitForLoadState('networkidle');
+        await assertNoKlaviyoLumaJs(page);
+        expect(cspViolations).toHaveLength(0);
     });
 });

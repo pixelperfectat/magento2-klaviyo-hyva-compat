@@ -1,41 +1,33 @@
 import { test, expect } from '@playwright/test';
-import { assertNoLumaJs, assertNoCspViolations } from '../fixtures/helpers';
+import { assertNoKlaviyoLumaJs, collectCspViolations } from '../fixtures/helpers';
 
 test.describe('Klaviyo Product View Tracking', () => {
-    test('fires Viewed Product event on product page', async ({ page }) => {
+    test('pushes Viewed Product and trackViewedItem to _learnq on a product page', async ({ page }) => {
         const productUrl = process.env.TEST_PRODUCT_URL || '/fusion-backpack.html';
 
+        // viewed.phtml pushes to window._learnq. Record every push before klaviyo.js can take
+        // the queue over.
         await page.addInitScript(() => {
-            window.__klaviyoPushCalls = [];
-            const origPush = Array.prototype.push;
-            Object.defineProperty(window, '_klOnsite', {
-                set(val) {
-                    this.__klOnsiteInternal = val;
-                },
-                get() {
-                    if (!this.__klOnsiteProxy) {
-                        this.__klOnsiteInternal = this.__klOnsiteInternal || [];
-                        this.__klOnsiteProxy = new Proxy(this.__klOnsiteInternal, {
-                            get(target, prop) {
-                                if (prop === 'push') {
-                                    return (...args: any[]) => {
-                                        window.__klaviyoPushCalls.push(...args);
-                                        return origPush.apply(target, args);
-                                    };
-                                }
-                                return target[prop as any];
-                            }
-                        });
-                    }
-                    return this.__klOnsiteProxy;
-                }
-            });
+            const calls: unknown[] = [];
+            const queue: unknown[] = [];
+            const originalPush = queue.push;
+            queue.push = function (...items: unknown[]) {
+                calls.push(...items);
+                return originalPush.apply(this, items);
+            };
+            (window as any).__klaviyoPushCalls = calls;
+            (window as any)._learnq = queue;
         });
 
+        const cspViolations = collectCspViolations(page);
         await page.goto(productUrl);
-        await page.waitForTimeout(3000);
+        await page.waitForFunction(
+            () => (window as any).__klaviyoPushCalls.some((call: unknown[]) => call[0] === 'trackViewedItem'),
+            null,
+            { timeout: 15000 }
+        );
 
-        const pushCalls = await page.evaluate(() => window.__klaviyoPushCalls);
+        const pushCalls = await page.evaluate(() => (window as any).__klaviyoPushCalls);
         const viewedProduct = pushCalls.find((call: any[]) =>
             Array.isArray(call) && call[0] === 'track' && call[1] === 'Viewed Product'
         );
@@ -45,14 +37,10 @@ test.describe('Klaviyo Product View Tracking', () => {
 
         expect(viewedProduct).toBeDefined();
         expect(viewedItem).toBeDefined();
+        expect(viewedProduct[2]).toHaveProperty('ProductName');
+        expect(viewedProduct[2]).toHaveProperty('ProductID');
 
-        if (viewedProduct) {
-            const productData = viewedProduct[2];
-            expect(productData).toHaveProperty('ProductName');
-            expect(productData).toHaveProperty('ProductID');
-        }
-
-        await assertNoLumaJs(page);
-        await assertNoCspViolations(page);
+        await assertNoKlaviyoLumaJs(page);
+        expect(cspViolations).toHaveLength(0);
     });
 });
