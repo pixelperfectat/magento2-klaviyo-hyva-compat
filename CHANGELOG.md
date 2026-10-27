@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `KlaviyoTracking` view model that gives the templates the store's cookie restriction setting.
 
 ### Changed
-- Support PHP 8.2, 8.3 and 8.4 (`~8.2.0 || ~8.3.0 || ~8.4.0`); the code has no 8.3-only syntax.
+- Support PHP 8.2 to 8.5 (`~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0`); the code has no 8.3-only syntax, and the checks pass on 8.5.
 - Allow `klaviyo/magento2-extension` 5.x (`^4.4 || ^5.0`). The Klaviyo frontend code these templates replace is identical in 4.4.4 and 5.2.0.
 - Require `hyva-themes/magento2-theme-module ^1.3.11`, the first release with the `HyvaCsp` view model the templates use. Older Hyvä versions failed on these templates.
 
