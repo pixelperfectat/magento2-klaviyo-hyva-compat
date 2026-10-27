@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\HyvaCsp;
 use Klaviyo\Reclaim\Block\Initialize;
+use PixelPerfect\KlaviyoHyvaCompat\ViewModel\KlaviyoTracking;
 
 /** @var Initialize $block */
 /** @var ViewModelRegistry $viewModels */
@@ -17,6 +18,8 @@ if (!$block->isKlaviyoEnabled() || !$klaviyoKey) {
 
 /** @var HyvaCsp $hyvaCsp */
 $hyvaCsp = $viewModels->require(HyvaCsp::class);
+/** @var KlaviyoTracking $klaviyoTracking */
+$klaviyoTracking = $viewModels->require(KlaviyoTracking::class);
 $klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr($klaviyoKey) . '/klaviyo.js';
 ?>
 
@@ -25,12 +28,21 @@ $klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr
 </div>
 
 <script>
-    // Default consent check — uses Magento cookie restriction mode.
-    // The bridge module (PixelPerfect_KlaviyoHyvaCookieConsent) overrides this
-    // to use cookie_consent_groups.marketing instead.
+    // Default consent check, based on Magento's cookie restriction mode. A consent manager takes
+    // over by defining window.klaviyoConsentGranted before this script runs (see README).
     window.klaviyoConsentGranted = window.klaviyoConsentGranted || function() {
+        if (!<?= $klaviyoTracking->isCookieRestrictionEnabled() ? 'true' : 'false' ?>) {
+            return true;
+        }
         var cookie = hyva.getCookie('user_allowed_save_cookie');
-        return cookie === null || cookie !== '';
+        if (!cookie) {
+            return false;
+        }
+        try {
+            return JSON.parse(decodeURIComponent(cookie))[window.CURRENT_WEBSITE_ID] === 1;
+        } catch (e) {
+            return false;
+        }
     };
 
     // Load Klaviyo CDN script only if consent is granted
@@ -49,10 +61,12 @@ $klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr
         klaviyoLoadCdn();
     }
 
-    window.addEventListener('cookie-consent-updated', function() {
-        if (window.klaviyoConsentGranted()) {
-            klaviyoLoadCdn();
-        }
+    ['cookie-consent-updated', 'user-allowed-save-cookie'].forEach(function(eventName) {
+        window.addEventListener(eventName, function() {
+            if (window.klaviyoConsentGranted()) {
+                klaviyoLoadCdn();
+            }
+        });
     });
 
     document.addEventListener('alpine:init', () => {
