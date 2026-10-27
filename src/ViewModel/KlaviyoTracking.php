@@ -14,6 +14,7 @@ use Magento\Store\Model\ScopeInterface;
 class KlaviyoTracking implements ArgumentInterface
 {
     private const XML_PATH_COOKIE_RESTRICTION = 'web/cookie/cookie_restriction';
+    private const SDK_URL_PATTERN = 'https://static.klaviyo.com/onsite/js/%s/klaviyo.js';
 
     /**
      * @param ScopeConfigInterface $scopeConfig
@@ -32,5 +33,13 @@ class KlaviyoTracking implements ArgumentInterface
     public function isCookieRestrictionEnabled(): bool
     {
         return $this->scopeConfig->isSetFlag(self::XML_PATH_COOKIE_RESTRICTION, ScopeInterface::SCOPE_STORE);
+    }
+
+    /**
+     * URL of Klaviyo's onsite SDK for a public API key, with the key URL-encoded as a path segment.
+     */
+    public function getSdkUrl(string $publicApiKey): string
+    {
+        return sprintf(self::SDK_URL_PATTERN, rawurlencode($publicApiKey));
     }
 }

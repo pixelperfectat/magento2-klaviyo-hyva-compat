@@ -5,9 +5,11 @@ declare(strict_types=1);
 use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\HyvaCsp;
 use Klaviyo\Reclaim\Block\Initialize;
+use Magento\Framework\Escaper;
 use PixelPerfect\KlaviyoHyvaCompat\ViewModel\KlaviyoTracking;
 
 /** @var Initialize $block */
+/** @var Escaper $escaper */
 /** @var ViewModelRegistry $viewModels */
 
 $klaviyoKey = $block->getPublicApiKey();
@@ -20,7 +22,7 @@ if (!$block->isKlaviyoEnabled() || !$klaviyoKey) {
 $hyvaCsp = $viewModels->require(HyvaCsp::class);
 /** @var KlaviyoTracking $klaviyoTracking */
 $klaviyoTracking = $viewModels->require(KlaviyoTracking::class);
-$klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr($klaviyoKey) . '/klaviyo.js';
+$klaviyoSrc = $klaviyoTracking->getSdkUrl($klaviyoKey);
 ?>
 
 <div x-data="klaviyoCustomerTracking"
@@ -53,7 +55,7 @@ $klaviyoSrc = 'https://static.klaviyo.com/onsite/js/' . $escaper->escapeHtmlAttr
         var s = document.createElement('script');
         s.type = 'application/javascript';
         s.async = true;
-        s.src = '<?= /* @noEscape */ $klaviyoSrc ?>';
+        s.src = '<?= $escaper->escapeJs($klaviyoSrc) ?>';
         document.head.appendChild(s);
     }
 

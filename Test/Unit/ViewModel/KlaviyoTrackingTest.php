@@ -35,4 +35,24 @@ class KlaviyoTrackingTest extends TestCase
             'restriction mode off' => [false],
         ];
     }
+
+    public function testSdkUrlEmbedsThePublicKeyAsPathSegment(): void
+    {
+        $viewModel = new KlaviyoTracking($this->createMock(ScopeConfigInterface::class));
+
+        self::assertSame(
+            'https://static.klaviyo.com/onsite/js/AbC123/klaviyo.js',
+            $viewModel->getSdkUrl('AbC123')
+        );
+    }
+
+    public function testSdkUrlEncodesCharactersThatWouldChangeThePath(): void
+    {
+        $viewModel = new KlaviyoTracking($this->createMock(ScopeConfigInterface::class));
+
+        self::assertSame(
+            'https://static.klaviyo.com/onsite/js/a%2F..%3Fx%3D%22/klaviyo.js',
+            $viewModel->getSdkUrl('a/..?x="')
+        );
+    }
 }
