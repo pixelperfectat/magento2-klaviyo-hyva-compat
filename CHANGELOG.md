@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Support PHP 8.2, 8.3 and 8.4 (`~8.2.0 || ~8.3.0 || ~8.4.0`); the code has no 8.3-only syntax.
 - Allow `klaviyo/magento2-extension` 5.x (`^4.4 || ^5.0`). The Klaviyo frontend code these templates replace is identical in 4.4.4 and 5.2.0.
+- Require `hyva-themes/magento2-theme-module ^1.3.11`, the first release with the `HyvaCsp` view model the templates use. Older Hyvä versions failed on these templates.
 
 ## [0.2.0] - 2026-07-06
 
