@@ -62,9 +62,7 @@ The module has no settings of its own.
 
 ## Consent contract
 
-A consent manager can take over the consent decision. This is the integration point, and it is what
-[`pixelperfectat/magento2-klaviyo-hyva-cookie-consent`](https://github.com/pixelperfectat/magento2-klaviyo-hyva-cookie-consent)
-uses:
+A consent manager can take over the consent decision. This is the module's integration point:
 
 - **`window.klaviyoConsentGranted()`**: a function that returns `true` when Klaviyo may run. The
   templates only define their default (the cookie restriction check above) if the function doesn't
@@ -100,8 +98,8 @@ composer remove pixelperfectat/magento2-klaviyo-hyva-compat
 bin/magento setup:upgrade
 ```
 
-The module has no database tables or configuration values to clean up. If you use
-`pixelperfectat/magento2-klaviyo-hyva-cookie-consent`, remove that first: it requires this module.
+The module has no database tables or configuration values to clean up. Remove any package that
+requires this one first (`composer why pixelperfectat/magento2-klaviyo-hyva-compat` lists them).
 
 ## Development
 
