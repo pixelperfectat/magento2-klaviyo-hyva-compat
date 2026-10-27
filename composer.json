@@ -1,7 +1,16 @@
 {
     "name": "pixelperfectat/magento2-klaviyo-hyva-compat",
-    "description": "Hyva Theme compatibility for Klaviyo_Reclaim. Based on hyva-themes/magento2-klaviyo-reclaim.",
+    "description": "Hyvä Theme compatibility for Klaviyo_Reclaim: CSP-safe Alpine.js templates for customer identification, product view tracking and the cart refresh ping.",
     "type": "magento2-module",
+    "keywords": [
+        "magento2",
+        "magento2-module",
+        "hyva",
+        "hyva-themes",
+        "klaviyo",
+        "alpinejs",
+        "csp"
+    ],
     "license": "MIT",
     "authors": [
         {
@@ -9,6 +18,10 @@
             "homepage": "https://github.com/pixelperfectat"
         }
     ],
+    "support": {
+        "issues": "https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat/issues",
+        "source": "https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat"
+    },
     "require": {
         "php": "^8.3",
         "hyva-themes/magento2-compat-module-fallback": "^1.0",
