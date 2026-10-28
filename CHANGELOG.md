@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-28
+
 ### Added
 - `KlaviyoTracking` view model that gives the templates the store's cookie restriction setting.
 
@@ -41,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Viewed Product events were not sent on product pages.
 - Race between Alpine initialisation and component registration in the cart and viewed-product templates.
 
-[Unreleased]: https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat/compare/v0.2.0...0.3.0
 [0.2.0]: https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat/releases/tag/v0.1.0
