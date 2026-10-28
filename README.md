@@ -1,5 +1,10 @@
 # Klaviyo Hyvä Theme Compatibility
 
+[![CI](https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pixelperfectat/magento2-klaviyo-hyva-compat/actions/workflows/ci.yml)
+[![Packagist version](https://img.shields.io/packagist/v/pixelperfectat/magento2-klaviyo-hyva-compat)](https://packagist.org/packages/pixelperfectat/magento2-klaviyo-hyva-compat)
+[![PHP](https://img.shields.io/packagist/dependency-v/pixelperfectat/magento2-klaviyo-hyva-compat/php)](composer.json)
+[![License: MIT](https://img.shields.io/packagist/l/pixelperfectat/magento2-klaviyo-hyva-compat)](LICENSE)
+
 Hyvä Theme compatibility module for [Klaviyo_Reclaim](https://github.com/klaviyo/magento2-klaviyo)
 (`klaviyo/magento2-extension`).
 
